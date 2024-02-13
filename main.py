@@ -94,15 +94,17 @@ def load_cfg_json():
                 logger.warning(is_ok_flag)
 
             elif target_url_v4 == "":
-                is_ok_flag = "Read Config File Failed - No IPv4 target url"
-                logger.warning(is_ok_flag)
+                # is_ok_flag = "Read Config File Failed - No IPv4 target url"
+                # logger.warning(is_ok_flag)
+                pass
             elif is_valid_domain(target_url_v4) == False:
                 is_ok_flag = "Read Config File Failed - IPv4 Target URL Not Valid"
                 logger.warning(is_ok_flag)
 
             elif target_url_v6 == "":
-                is_ok_flag = "Read Config File Failed - No IPv6 target url"
-                logger.warning(is_ok_flag)
+                # is_ok_flag = "Read Config File Failed - No IPv6 target url"
+                # logger.info("No IPv6 target url, Skip IPv6......")
+                pass
             elif is_valid_domain(target_url_v6) == False:
                 is_ok_flag = "Read Config File Failed - IPv6 Target URL Not Valid"
                 logger.warning(is_ok_flag)
@@ -212,7 +214,7 @@ def create_dns_record_for_cloudflare(ipv4_or_ipv6: int, target_url: str, now_add
         payload = {
             "content": now_address,
             "name": target_url,
-            "proxied": False,
+            "proxied": True,
             "type": "A",
             "comment": "",
             "tags": [],
@@ -222,7 +224,7 @@ def create_dns_record_for_cloudflare(ipv4_or_ipv6: int, target_url: str, now_add
         payload = {
             "content": now_address,
             "name": target_url,
-            "proxied": False,
+            "proxied": True,
             "type": "AAAA",
             "comment": "",
             "tags": [],
@@ -255,7 +257,7 @@ def update_dns_record_for_cloudflare(ipv4_or_ipv6: int, target_url: str, target_
         payload = {
             "content": now_address,
             "name": target_url,
-            "proxied": False,
+            "proxied": True,
             "type": "A",
             "comment": "",
             "tags": [],
@@ -265,7 +267,7 @@ def update_dns_record_for_cloudflare(ipv4_or_ipv6: int, target_url: str, target_
         payload = {
             "content": now_address,
             "name": target_url,
-            "proxied": False,
+            "proxied": True,
             "type": "AAAA",
             "comment": "",
             "tags": [],
@@ -290,13 +292,22 @@ if __name__ == '__main__':
     is_ok_flag, api_key, zone_id, target_url_v4, target_url_v6, now_ipv4_address, now_ipv6_address, sleep_time_in_ms = load_cfg_json()
 
     is_loop = True
+    loop_cnt = 0
 
     if is_ok_flag != "OK":
         logger.info(is_ok_flag)
         is_loop = False
 
     while is_loop:
-        logger.info("Start Local DDNS Checking Operation......")
+        loop_cnt += 1
+        logger.info("Start Local DDNS Checking Operation ====== Loop " + str(loop_cnt) + " ======")
+
+        if loop_cnt != 1:
+            is_ok_flag, api_key, zone_id, target_url_v4, target_url_v6, now_ipv4_address, now_ipv6_address, sleep_time_in_ms = load_cfg_json()
+            if is_ok_flag != "OK":
+                logger.info(is_ok_flag)
+                is_loop = False
+                break
 
         res_json_item = get_dns_record_list_from_cloudflare(zone_id, api_key)
 
@@ -310,27 +321,33 @@ if __name__ == '__main__':
             check_is_need_create_or_update_in_clodflare_dns_record(target_url_v4, now_ipv4_address, target_url_v6,
                                                                    now_ipv6_address, res_json_item)
 
-        if is_v4_target_url_existed:
-            if is_ipv4_need_update:
-                logger.info("Public IPv4 Changed, Update......")
-                update_dns_record_for_cloudflare(4, target_url_v4, ipv4_dns_record_id, now_ipv4_address, api_key,
-                                                 zone_id)
+        if target_url_v4 != "":
+            if is_v4_target_url_existed:
+                if is_ipv4_need_update:
+                    logger.info("Public IPv4 Changed, Update......")
+                    update_dns_record_for_cloudflare(4, target_url_v4, ipv4_dns_record_id, now_ipv4_address, api_key,
+                                                     zone_id)
+                else:
+                    logger.info("Public IPv4 NOT Change, Pass......")
             else:
-                logger.info("Public IPv4 NOT Change, Pass......")
+                logger.info("IPv4 DNS Record NOT Existed, Create......")
+                create_dns_record_for_cloudflare(4, target_url_v4, now_ipv4_address, api_key, zone_id)
         else:
-            logger.info("IPv4 DNS Record NOT Existed, Create......")
-            create_dns_record_for_cloudflare(4, target_url_v4, now_ipv4_address, api_key, zone_id)
+            logger.info("No IPv4 target url, Skip IPv4......")
 
-        if is_v6_target_url_existed:
-            if is_ipv6_need_update:
-                logger.info("Public IPv6 Changed, Update......")
-                update_dns_record_for_cloudflare(6, target_url_v6, ipv6_dns_record_id, now_ipv6_address, api_key,
-                                                 zone_id)
+        if target_url_v6 != "":
+            if is_v6_target_url_existed:
+                if is_ipv6_need_update:
+                    logger.info("Public IPv6 Changed, Update......")
+                    update_dns_record_for_cloudflare(6, target_url_v6, ipv6_dns_record_id, now_ipv6_address, api_key,
+                                                     zone_id)
+                else:
+                    logger.info("Public IPv6 NOT Change, Pass......")
             else:
-                logger.info("Public IPv6 NOT Change, Pass......")
+                logger.info("IPv6 DNS Record NOT Existed, Create......")
+                create_dns_record_for_cloudflare(6, target_url_v6, now_ipv6_address, api_key, zone_id)
         else:
-            logger.info("IPv6 DNS Record NOT Existed, Create......")
-            create_dns_record_for_cloudflare(6, target_url_v6, now_ipv6_address, api_key, zone_id)
+            logger.info("No IPv6 target url, Skip IPv6......")
 
         save_cfg_json(now_ipv4_address, now_ipv6_address)
 
