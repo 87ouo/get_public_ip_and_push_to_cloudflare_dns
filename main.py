@@ -338,12 +338,16 @@ if __name__ == '__main__':
 
         res_json_item = get_dns_record_list_from_cloudflare(zone_id, api_key)
 
-        if (target_url_v4 != "") and (check_domain_is_same(res_json_item=res_json_item, domain_in_cfg=target_url_v4) is False):
-            logger.info("The IPv4 Target URL`s Domain in config.cfgjson IS NOT same with Cloudflare`s return information's Domain.")
+        if (target_url_v4 != "") and (
+                check_domain_is_same(res_json_item=res_json_item, domain_in_cfg=target_url_v4) is False):
+            logger.info(
+                "The IPv4 Target URL`s Domain in config.cfgjson IS NOT same with Cloudflare`s return information's Domain.")
             is_loop = False
             break
-        if (target_url_v6 != "") and (check_domain_is_same(res_json_item=res_json_item, domain_in_cfg=target_url_v6) is False):
-            logger.info("The IPv6 Target URL`s Domain in config.cfgjson IS NOT same with Cloudflare`s return information's Domain.")
+        if (target_url_v6 != "") and (
+                check_domain_is_same(res_json_item=res_json_item, domain_in_cfg=target_url_v6) is False):
+            logger.info(
+                "The IPv6 Target URL`s Domain in config.cfgjson IS NOT same with Cloudflare`s return information's Domain.")
             is_loop = False
             break
 
@@ -412,5 +416,6 @@ if __name__ == '__main__':
 
         # save_cfg_json()
 
+        sleep_time_in_ms = max(sleep_time_in_ms, (1 * 60 * 1000))  # 最小loop时间间隔1分钟
         logger.info("Operation Finished. Sleep " + str(sleep_time_in_ms / 1000) + " Sec......\n\n")
         sleep(sleep_time_in_ms / 1000)
